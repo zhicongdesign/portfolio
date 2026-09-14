@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.image-cache/
 .env
 .env.*
 !.env.example

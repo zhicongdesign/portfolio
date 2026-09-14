@@ -4962,7 +4962,7 @@ button {
   }
 
   .figmaNav nav {
-    gap: 16px;
+    gap: 12px;
     padding-top: 2px;
     font-size: 12px;
   }
@@ -4995,8 +4995,7 @@ button {
     padding: 168px 28px 208px;
   }
 
-  .heroAsciify > canvas,
-  .heroMotion {
+  .heroAsciify > canvas {
     display: none;
   }
 
@@ -5103,12 +5102,30 @@ button {
 }
 
 @media (max-width: 390px) {
+  .figmaNav {
+    gap: 12px;
+  }
+
+  .figmaNav nav {
+    gap: 8px;
+  }
+
+  .figmaNav nav a {
+    font-size: 11px;
+  }
+
   .figmaHeroTitle {
     font-size: 56px;
   }
 }
 
 @media (max-width: 360px) {
+  .figmaNav {
+    right: 20px;
+    left: 20px;
+    gap: 8px;
+  }
+
   .figmaHeroTitle {
     font-size: 46px;
   }

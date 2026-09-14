@@ -5,9 +5,11 @@ import FoldText from './components/FoldText';
 import TiltedCard from './components/TiltedCard';
 import './styles.css';
 
-const assetUrl = (path) => path.startsWith('/assets/')
-  ? `${import.meta.env.BASE_URL}${path.slice(1)}`
-  : path;
+const assetUrl = (path) => {
+  if (!path.startsWith('/assets/')) return path;
+  const optimizedPath = __OPTIMIZED_IMAGES__[path] || path;
+  return `${import.meta.env.BASE_URL}${optimizedPath.slice(1)}`;
+};
 
 const homeAssets = Object.fromEntries(Object.entries({
   heroFallback: '/assets/figma-home-v2/hero-fallback.png',
@@ -433,10 +435,10 @@ function FloatingNav() {
     <header className={`figmaNav is-${navTone}`}>
       <a className="figmaLogo" href="#top">ZHICONG DESIGN</a>
       <nav aria-label="主导航">
-        <a href="#top">首页</a>
-        <a href="#resume">履历</a>
-        <a href="#projects">项目</a>
-        <a href="#contact">联系</a>
+        <a href="#top">Home</a>
+        <a href="#resume">Resume</a>
+        <a href="#projects">Projects</a>
+        <a href="#contact">Contact</a>
       </nav>
     </header>
   );
@@ -693,7 +695,7 @@ function ProjectCard({ item, onOpenCase, revealDelay = 0, className = '' }) {
       data-reveal
       style={{ '--reveal-delay': `${revealDelay}ms` }}
     >
-      <img src={item.image} alt={`${item.title}项目封面`} />
+      <img src={item.image} alt={`${item.title}项目封面`} loading="lazy" decoding="async" />
       {item.orb && <img className="projectOrb" src={item.orb} alt="" aria-hidden="true" />}
       <span className="projectShade" aria-hidden="true" />
       <span className="projectTitle">{item.title}</span>
@@ -736,10 +738,10 @@ function CasePage({ project, onBack, onOpenProject }) {
           ZHICONG DESIGN
         </a>
         <nav aria-label="主导航">
-          <a href="#top" onClick={(event) => handleHomeNavigation(event, 'top')}>首页</a>
-          <a href="#resume" onClick={(event) => handleHomeNavigation(event, 'resume')}>履历</a>
-          <a href="#projects" onClick={(event) => handleHomeNavigation(event, 'projects')}>项目</a>
-          <a href="#contact" onClick={(event) => handleHomeNavigation(event, 'contact')}>联系</a>
+          <a href="#top" onClick={(event) => handleHomeNavigation(event, 'top')}>Home</a>
+          <a href="#resume" onClick={(event) => handleHomeNavigation(event, 'resume')}>Resume</a>
+          <a href="#projects" onClick={(event) => handleHomeNavigation(event, 'projects')}>Projects</a>
+          <a href="#contact" onClick={(event) => handleHomeNavigation(event, 'contact')}>Contact</a>
         </nav>
       </header>
 
@@ -757,7 +759,7 @@ function CasePage({ project, onBack, onOpenProject }) {
           <div className="frameScroller">
             {relatedFrames.map((frame, index) => (
               <figure className="frameThumb" key={`${frame.name}-${index}`}>
-                <img src={assetUrl(frame.image)} alt={frame.name} loading="lazy" />
+              <img src={assetUrl(frame.image)} alt={frame.name} loading="lazy" decoding="async" />
               </figure>
             ))}
           </div>
