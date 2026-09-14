@@ -5,7 +5,11 @@ import FoldText from './components/FoldText';
 import TiltedCard from './components/TiltedCard';
 import './styles.css';
 
-const homeAssets = {
+const assetUrl = (path) => path.startsWith('/assets/')
+  ? `${import.meta.env.BASE_URL}${path.slice(1)}`
+  : path;
+
+const homeAssets = Object.fromEntries(Object.entries({
   heroFallback: '/assets/figma-home-v2/hero-fallback.png',
   profilePhoto: '/assets/figma-home-v2/profile-photo-2026.png',
   xiangyuLogo: '/assets/figma-home-v2/logo-xiangyu.png',
@@ -18,7 +22,7 @@ const homeAssets = {
   huaweiBrand: '/assets/figma-home-v2/huawei-brand.png',
   arrow: '/assets/figma-home-v2/arrow.svg',
   loopMotion: '/assets/hero-motion/september-07.mov',
-};
+}).map(([key, path]) => [key, assetUrl(path)]));
 
 const profile = {
   name: '庞志聪',
@@ -753,7 +757,7 @@ function CasePage({ project, onBack, onOpenProject }) {
           <div className="frameScroller">
             {relatedFrames.map((frame, index) => (
               <figure className="frameThumb" key={`${frame.name}-${index}`}>
-                <img src={frame.image} alt={frame.name} loading="lazy" />
+                <img src={assetUrl(frame.image)} alt={frame.name} loading="lazy" />
               </figure>
             ))}
           </div>
