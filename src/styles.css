@@ -3330,6 +3330,17 @@ button {
   backdrop-filter: blur(10px);
 }
 
+@media (max-width: 760px), (hover: none), (pointer: coarse) {
+  .introPortrait .tilted-card-overlay {
+    display: none;
+  }
+
+  .introPortrait .tilted-card-inner {
+    transform: none !important;
+    will-change: auto;
+  }
+}
+
 .introProfile h2 {
   margin: 78px 0 0;
   color: #000000;
