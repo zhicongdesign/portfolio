@@ -4786,7 +4786,7 @@ button {
 }
 
 /* Responsive hardening */
-@media (min-width: 761px) and (max-width: 1440px) {
+@media (min-width: 761px) and (max-width: 1700px) {
   .introSection {
     height: auto;
     min-height: 900px;
