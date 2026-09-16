@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import { Asciify } from './components/canvasui/Asciify';
 import FoldText from './components/FoldText';
 import TiltedCard from './components/TiltedCard';
@@ -845,4 +846,9 @@ function Footer() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById('root')).render(
+  <>
+    <App />
+    <Analytics />
+  </>,
+);
