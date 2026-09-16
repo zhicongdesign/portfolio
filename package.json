@@ -5,6 +5,7 @@
     "preview": "PATH=/Applications/Codex.app/Contents/Resources/cua_node/bin:$PATH vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@vitejs/plugin-react": "^4.3.4",
     "gsap": "^3.15.0",
     "lucide-react": "latest",
