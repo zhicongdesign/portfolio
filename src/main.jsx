@@ -1,5 +1,14 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { Asciify } from './components/canvasui/Asciify';
 import FoldText from './components/FoldText';
@@ -459,40 +468,49 @@ function useRevealAnimations(key) {
 }
 
 function App() {
-  const [activeCaseId, setActiveCaseId] = useState(null);
-  const activeCase = useMemo(() => cases.find((item) => item.id === activeCaseId), [activeCaseId]);
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/projects/:projectId" element={<ProjectPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
-  useRevealAnimations(activeCaseId);
+function HomePage() {
+  const location = useLocation();
 
-  const closeCaseAt = (sectionId = 'top') => {
-    setActiveCaseId(null);
-    window.history.replaceState(null, '', `#${sectionId}`);
+  useRevealAnimations('home');
+
+  useEffect(() => {
+    const sectionId = location.hash.slice(1);
+    if (!sectionId) return;
+
     window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
-      });
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
     });
-  };
-
-  if (activeCase) {
-    return (
-      <CasePage
-        project={activeCase}
-        onBack={closeCaseAt}
-        onOpenProject={setActiveCaseId}
-      />
-    );
-  }
+  }, [location.hash]);
 
   return (
     <main className="portfolioShell figmaPortfolio">
       <FloatingNav />
       <Hero />
       <Resume />
-      <Projects onOpenCase={setActiveCaseId} />
+      <Projects />
       <Footer />
     </main>
   );
+}
+
+function ProjectPage() {
+  const { projectId } = useParams();
+  const project = cases.find((item) => item.id === projectId);
+
+  useRevealAnimations(projectId);
+
+  if (!project) return <Navigate to="/#projects" replace />;
+
+  return <CasePage project={project} />;
 }
 
 function FloatingNav() {
@@ -711,7 +729,7 @@ function Resume() {
   );
 }
 
-function Projects({ onOpenCase }) {
+function Projects() {
   return (
     <section className="figmaProjects" id="projects">
       <div className="projectBand projectBand--xiangyu">
@@ -725,7 +743,7 @@ function Projects({ onOpenCase }) {
 
         <div className="projectGrid projectGrid--three">
           {homeProjects.filter((item) => item.group === 'XIANGYU').map((item, index) => (
-            <ProjectCard item={item} key={item.id} onOpenCase={onOpenCase} revealDelay={index * 100} />
+            <ProjectCard item={item} key={item.id} revealDelay={index * 100} />
           ))}
         </div>
       </div>
@@ -740,7 +758,7 @@ function Projects({ onOpenCase }) {
 
         <div className="projectGrid projectGrid--two">
           {homeProjects.filter((item) => item.group === 'HUAWEI').map((item, index) => (
-            <ProjectCard item={item} key={item.id} onOpenCase={onOpenCase} revealDelay={index * 110} />
+            <ProjectCard item={item} key={item.id} revealDelay={index * 110} />
           ))}
         </div>
       </div>
@@ -763,7 +781,7 @@ function Projects({ onOpenCase }) {
   );
 }
 
-function ProjectCard({ item, onOpenCase, revealDelay = 0, className = '' }) {
+function ProjectCard({ item, revealDelay = 0, className = '' }) {
   const handlePointerMove = (event) => {
     if (
       !window.matchMedia('(pointer: fine)').matches
@@ -785,10 +803,9 @@ function ProjectCard({ item, onOpenCase, revealDelay = 0, className = '' }) {
   };
 
   return (
-    <button
+    <Link
       className={`projectCard${item.wide ? ' projectCard--wide' : ''}${className ? ` ${className}` : ''}`}
-      type="button"
-      onClick={() => onOpenCase(item.id)}
+      to={`/projects/${item.id}`}
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointer}
       data-reveal
@@ -799,11 +816,11 @@ function ProjectCard({ item, onOpenCase, revealDelay = 0, className = '' }) {
       <span className="projectShade" aria-hidden="true" />
       <span className="projectTitle">{item.title}</span>
       <img className="projectArrow" src={homeAssets.arrow} alt="" aria-hidden="true" />
-    </button>
+    </Link>
   );
 }
 
-function CasePage({ project, onBack, onOpenProject }) {
+function CasePage({ project }) {
   const relatedFrames = getRelatedFrames(project.id);
   const projectIndex = cases.findIndex((item) => item.id === project.id) + 1;
   const otherProjects = homeProjects.filter((item) => item.id !== project.id);
@@ -821,11 +838,6 @@ function CasePage({ project, onBack, onOpenProject }) {
     return () => window.removeEventListener('scroll', updateProgress);
   }, [project.id]);
 
-  const handleHomeNavigation = (event, sectionId) => {
-    event.preventDefault();
-    onBack(sectionId);
-  };
-
   return (
     <main className="casePage">
       <div className="caseReadingProgress" aria-hidden="true">
@@ -833,14 +845,14 @@ function CasePage({ project, onBack, onOpenProject }) {
       </div>
 
       <header className="figmaNav caseDetailNav is-light">
-        <a className="figmaLogo" href="#top" onClick={(event) => handleHomeNavigation(event, 'top')}>
+        <Link className="figmaLogo" to="/#top">
           ZHICONG DESIGN
-        </a>
+        </Link>
         <nav aria-label="主导航">
-          <a href="#top" onClick={(event) => handleHomeNavigation(event, 'top')}>Home</a>
-          <a href="#resume" onClick={(event) => handleHomeNavigation(event, 'resume')}>Resume</a>
-          <a href="#projects" onClick={(event) => handleHomeNavigation(event, 'projects')}>Projects</a>
-          <a href="#contact" onClick={(event) => handleHomeNavigation(event, 'contact')}>Contact</a>
+          <Link to="/#top">Home</Link>
+          <Link to="/#resume">Resume</Link>
+          <Link to="/#projects">Projects</Link>
+          <Link to="/#contact">Contact</Link>
         </nav>
       </header>
 
@@ -892,7 +904,6 @@ function CasePage({ project, onBack, onOpenProject }) {
               className="caseMoreProjectCard"
               item={item}
               key={item.id}
-              onOpenCase={onOpenProject}
               revealDelay={index * 80}
             />
           ))}
@@ -947,8 +958,8 @@ function Footer() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <>
+  <BrowserRouter>
     <App />
     <Analytics />
-  </>,
+  </BrowserRouter>,
 );
