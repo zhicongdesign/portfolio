@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
-import { optimizeImages } from './scripts/optimize-images.mjs';
 
 export default defineConfig(async ({ command }) => {
-  const images = command === 'build' ? await optimizeImages() : null;
+  const images = command === 'build' && process.env.SKIP_IMAGE_OPTIMIZATION !== '1'
+    ? await import('./scripts/optimize-images.mjs').then(({ optimizeImages }) => optimizeImages())
+    : null;
   return {
     base: '/',
     define: { __OPTIMIZED_IMAGES__: JSON.stringify(images?.mapping || {}) },

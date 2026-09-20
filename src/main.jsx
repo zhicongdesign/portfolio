@@ -23,6 +23,8 @@ const homeAssets = Object.fromEntries(Object.entries({
   aiCard: '/assets/figma-home-v2/ai-card.png',
   huaweiGlobal: '/assets/figma-home-v2/huawei-global.png',
   huaweiBrand: '/assets/figma-home-v2/huawei-brand.png',
+  alibabaGrowth: '/assets/figma-home-v2/alibaba-growth-cover.png',
+  alibabaBrand: '/assets/figma-home-v2/alibaba-brand-cover.png',
   arrow: '/assets/figma-home-v2/arrow.svg',
   loopMotion: '/assets/hero-motion/september-07.mov',
 }).map(([key, path]) => [key, assetUrl(path)]));
@@ -93,6 +95,17 @@ const projectGroups = [
     cover: 'url("/assets/huawei-keynote/huawei-overview.jpg")',
     number: '02',
     cases: ['huawei-brand', 'huawei-global'],
+  },
+  {
+    id: 'alibaba',
+    label: 'GROWTH & BRAND EXPERIENCE',
+    title: 'Alibaba Experience Design',
+    company: '阿里巴巴 UC事业部',
+    summary:
+      '从 UC GAME 的增长体验到夸克与 UC 的品牌活动，以产品转化、用户留存和品牌传播为目标建立完整体验。',
+    cover: 'url("/assets/figma-home-v2/alibaba-growth-cover.png")',
+    number: '03',
+    cases: ['alibaba-growth', 'alibaba-brand'],
   },
 ];
 
@@ -243,6 +256,34 @@ const cases = [
       },
     ],
   },
+  {
+    id: 'alibaba-growth',
+    groupId: 'alibaba',
+    label: 'GROWTH EXPERIENCE',
+    title: 'Alibaba / Growth Experience',
+    company: '阿里巴巴 UC事业部',
+    summary: '围绕 UC GAME 2.0 的首屏屏效、游戏搜索与分类、任务福利流程，系统优化游戏发现、转化与用户留存体验。',
+    cover: 'url("/assets/figma-home-v2/alibaba-growth-cover.png")',
+    heroImage: '/assets/figma-home-v2/alibaba-growth-cover.png',
+    period: '2015/6 - 2020/9',
+    role: '增长体验 / UI 改版 / 用户留存',
+    stats: ['增长体验', '游戏发现', '留存优化'],
+    sections: [],
+  },
+  {
+    id: 'alibaba-brand',
+    groupId: 'alibaba',
+    label: 'BRAND & CAMPAIGN',
+    title: 'Alibaba / Brand & Campaign',
+    company: '阿里巴巴 UC事业部',
+    summary: '涵盖夸克学习季、UC 金松果奖等品牌与营销项目，以场景化视觉和活动系统连接品牌认知与传播触点。',
+    cover: 'url("/assets/figma-home-v2/alibaba-brand-cover.png")',
+    heroImage: '/assets/figma-home-v2/alibaba-brand-cover.png',
+    period: '2015/6 - 2020/9',
+    role: '品牌设计 / Campaign / 视觉系统',
+    stats: ['品牌活动', 'Campaign', '传播设计'],
+    sections: [],
+  },
 ];
 
 const figmaFrames = [
@@ -300,6 +341,32 @@ const figmaFrames = [
     group: 'huawei-global',
     image: `/assets/figma-frames/huawei-global/${fileName}`,
   })),
+  ...Array.from({ length: 20 }, (_, index) => ({
+    name: `Alibaba / Growth Experience ${index + 1}`,
+    group: 'alibaba-growth',
+    image: `/assets/figma-frames/alibaba-growth/growth-${String(index + 1).padStart(2, '0')}.jpg`,
+  })),
+  ...[
+    'brand-01.jpg',
+    'brand-02.jpg',
+    'brand-03.jpg',
+    'brand-04.jpg',
+    'brand-05.jpg',
+    'brand-06.jpg',
+    'brand-07.jpg',
+    'brand-08.png',
+    'brand-09.png',
+    'brand-10.png',
+    'brand-11.jpg',
+    'brand-12.jpg',
+    'brand-13.jpg',
+    'brand-14.jpg',
+    'brand-15.jpg',
+  ].map((fileName, index) => ({
+    name: `Alibaba / Brand & Campaign ${index + 1}`,
+    group: 'alibaba-brand',
+    image: `/assets/figma-frames/alibaba-brand/${fileName}`,
+  })),
 ];
 
 const homeProjects = [
@@ -338,6 +405,22 @@ const homeProjects = [
     period: '2021-2022',
     title: '华为数字能源云品牌创新',
     image: homeAssets.huaweiBrand,
+    wide: true,
+  },
+  {
+    id: 'alibaba-growth',
+    group: 'ALIBABA',
+    period: '2015-2020',
+    title: 'Growth Experience',
+    image: homeAssets.alibabaGrowth,
+    wide: true,
+  },
+  {
+    id: 'alibaba-brand',
+    group: 'ALIBABA',
+    period: '2015-2020',
+    title: 'Brand & Campaign',
+    image: homeAssets.alibabaBrand,
     wide: true,
   },
 ];
@@ -661,6 +744,21 @@ function Projects({ onOpenCase }) {
           ))}
         </div>
       </div>
+
+      <div className="projectBand projectBand--alibaba">
+        <header className="projectGroupHeader" data-reveal>
+          <div>
+            <h2>ALIBABA</h2>
+            <p>2015-2020</p>
+          </div>
+        </header>
+
+        <div className="projectGrid projectGrid--two">
+          {homeProjects.filter((item) => item.group === 'ALIBABA').map((item, index) => (
+            <ProjectCard item={item} key={item.id} onOpenCase={onOpenCase} revealDelay={index * 110} />
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
@@ -812,6 +910,8 @@ function getRelatedFrames(caseId) {
     'xiangyu-ai': ['ai'],
     'huawei-brand': ['huawei-brand'],
     'huawei-global': ['huawei-global'],
+    'alibaba-growth': ['alibaba-growth'],
+    'alibaba-brand': ['alibaba-brand'],
   };
   const groups = groupMap[caseId] || [];
   return figmaFrames.filter((frame) => groups.includes(frame.group));
