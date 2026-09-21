@@ -5,7 +5,7 @@ export default defineConfig(async ({ command }) => {
     ? await import('./scripts/optimize-images.mjs').then(({ optimizeImages }) => optimizeImages())
     : null;
   return {
-    base: '/',
+    base: process.env.VITE_BASE_PATH || '/',
     define: { __OPTIMIZED_IMAGES__: JSON.stringify(images?.mapping || {}) },
     plugins: images ? [{ name: 'lossless-public-images', closeBundle: images.writeOutput }] : [],
   };

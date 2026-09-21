@@ -21,6 +21,10 @@ const assetUrl = (path) => {
   return `${import.meta.env.BASE_URL}${optimizedPath.slice(1)}`;
 };
 
+const routerBasename = import.meta.env.BASE_URL === '/'
+  ? undefined
+  : import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const homeAssets = Object.fromEntries(Object.entries({
   heroFallback: '/assets/figma-home-v2/hero-fallback.png',
   profilePhoto: '/assets/figma-home-v2/profile-photo-2026.png',
@@ -773,7 +777,7 @@ function Projects() {
 
         <div className="projectGrid projectGrid--two">
           {homeProjects.filter((item) => item.group === 'ALIBABA').map((item, index) => (
-            <ProjectCard item={item} key={item.id} onOpenCase={onOpenCase} revealDelay={index * 110} />
+            <ProjectCard item={item} key={item.id} revealDelay={index * 110} />
           ))}
         </div>
       </div>
@@ -931,7 +935,11 @@ function getRelatedFrames(caseId) {
 function Footer() {
   return (
     <footer className="figmaContact" id="contact">
-      <div className="contactBackground" aria-hidden="true" />
+      <div
+        className="contactBackground"
+        aria-hidden="true"
+        style={{ backgroundImage: `url("${assetUrl('/assets/contact-background.png')}")` }}
+      />
       <h2 className="contactFoldHeading">
         <FoldText
           className="contactFoldText"
@@ -958,7 +966,7 @@ function Footer() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  <BrowserRouter basename={routerBasename}>
     <App />
     <Analytics />
   </BrowserRouter>,
