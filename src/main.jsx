@@ -21,10 +21,6 @@ const assetUrl = (path) => {
   return `${import.meta.env.BASE_URL}${optimizedPath.slice(1)}`;
 };
 
-const routerBasename = import.meta.env.BASE_URL === '/'
-  ? undefined
-  : import.meta.env.BASE_URL.replace(/\/$/, '');
-
 const homeAssets = Object.fromEntries(Object.entries({
   heroFallback: '/assets/figma-home-v2/hero-fallback.png',
   profilePhoto: '/assets/figma-home-v2/profile-photo-2026.png',
@@ -935,11 +931,7 @@ function getRelatedFrames(caseId) {
 function Footer() {
   return (
     <footer className="figmaContact" id="contact">
-      <div
-        className="contactBackground"
-        aria-hidden="true"
-        style={{ backgroundImage: `url("${assetUrl('/assets/contact-background.png')}")` }}
-      />
+      <div className="contactBackground" aria-hidden="true" />
       <h2 className="contactFoldHeading">
         <FoldText
           className="contactFoldText"
@@ -966,7 +958,7 @@ function Footer() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <BrowserRouter basename={routerBasename}>
+  <BrowserRouter>
     <App />
     <Analytics />
   </BrowserRouter>,
