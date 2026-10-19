@@ -12,6 +12,7 @@ import {
 import { Analytics } from '@vercel/analytics/react';
 import { Asciify } from './components/canvasui/Asciify';
 import FoldText from './components/FoldText';
+import HeroPang3D from './components/HeroPang3D';
 import TiltedCard from './components/TiltedCard';
 import './styles.css';
 
@@ -35,7 +36,8 @@ const homeAssets = Object.fromEntries(Object.entries({
   alibabaGrowth: '/assets/figma-home-v2/alibaba-growth-cover.png',
   alibabaBrand: '/assets/figma-home-v2/alibaba-brand-cover.png',
   arrow: '/assets/figma-home-v2/arrow.svg',
-  loopMotion: '/assets/hero-motion/september-07.mov',
+  loopMotion: '/assets/hero-motion/hero-loop-1080p.mp4',
+  heroPangModel: '/assets/3d/hero-pang-optimized.glb',
 }).map(([key, path]) => [key, assetUrl(path)]));
 
 const profile = {
@@ -642,22 +644,25 @@ function Hero() {
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             onCanPlay={() => setMotionReady(true)}
           />
         </div>
 
-        <div className="figmaHeroContent">
-          <h1 className="figmaHeroTitle">PORTFOLIO</h1>
-          <div className="figmaHeroIdentity">
-            <h2>庞志聪 - 资深体验设计师</h2>
+        <HeroPang3D modelUrl={homeAssets.heroPangModel} />
+
+        <div className="figmaHeroContent figmaHeroContent--pang">
+          <h1 className="heroSemanticTitle">PANG</h1>
+          <div className="heroPangIdentity">
+            <h2><strong>ZHICONG PANG</strong><span>Senior User Experience Designer</span></h2>
             <p>{profile.headline}</p>
           </div>
-          <p className="figmaHeroYear"><span>UPDATED</span><span>2026</span></p>
-          <div className="figmaHeroActions" aria-label="快速入口">
+          <div className="figmaHeroActions heroPangActions" aria-label="快速入口">
             <a className="figmaPrimaryButton" href="#resume">了解我</a>
             <a className="figmaSecondaryButton" href="#projects">查看作品</a>
           </div>
+          <p className="heroPangPortfolio">PORTFOLIO</p>
+          <p className="figmaHeroYear heroPangYear"><span>UPDATED</span><span>2026</span></p>
         </div>
       </Asciify>
     </section>
