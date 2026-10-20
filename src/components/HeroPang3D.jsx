@@ -12,8 +12,13 @@ gsap.registerPlugin(ScrollTrigger);
 const damp = (current, target, lambda, delta) =>
   THREE.MathUtils.damp(current, target, lambda, delta);
 
-function HeroPang3D({ modelUrl }) {
+function HeroPang3D({ modelUrl, onReady, onProgress, onError, playEntrance }) {
   const mountRef = useRef(null);
+  const introTimelineRef = useRef(null);
+
+  useEffect(() => {
+    if (playEntrance) introTimelineRef.current?.play();
+  }, [playEntrance]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -24,11 +29,18 @@ function HeroPang3D({ modelUrl }) {
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(27, 1, 0.1, 100);
-    const renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: !coarsePointer,
-      powerPreference: 'high-performance',
-    });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: !coarsePointer,
+        powerPreference: 'high-performance',
+      });
+    } catch {
+      mount.classList.add('is-error');
+      onError?.();
+      return undefined;
+    }
 
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -212,7 +224,7 @@ function HeroPang3D({ modelUrl }) {
         pivot.add(model);
         resize();
         if (!reduceMotion && scrollProgress < 0.15) {
-          introTimeline = gsap.timeline()
+          introTimeline = gsap.timeline({ paused: !playEntrance })
             .to(entrance, {
               rotateX: -0.015,
               rotateY: 0.04,
@@ -233,15 +245,25 @@ function HeroPang3D({ modelUrl }) {
               duration: 0.5,
               ease: 'power2.out',
             }, '-=0.08');
+          introTimelineRef.current = introTimeline;
         } else {
           Object.assign(entrance, { rotateX: 0, rotateY: 0, y: 0, z: 0, scale: 1, highlight: 1 });
         }
         mount.classList.add('is-ready');
-        if (reduceMotion) renderer.render(scene, camera);
-        else start();
+        renderer.render(scene, camera);
+        onReady?.();
+        if (!reduceMotion) start();
       },
-      undefined,
-      () => mount.classList.add('is-error')
+      (event) => {
+        if (!disposed && event.lengthComputable && event.total > 0) {
+          onProgress?.(Math.min(95, Math.round((event.loaded / event.total) * 95)));
+        }
+      },
+      () => {
+        if (disposed) return;
+        mount.classList.add('is-error');
+        onError?.();
+      }
     );
 
     const resizeObserver = new ResizeObserver(resize);
@@ -276,6 +298,7 @@ function HeroPang3D({ modelUrl }) {
       disposed = true;
       stop();
       introTimeline?.kill();
+      introTimelineRef.current = null;
       scrollTrigger?.kill();
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
@@ -293,7 +316,7 @@ function HeroPang3D({ modelUrl }) {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [modelUrl]);
+  }, [modelUrl, onReady, onProgress, onError]);
 
   return (
     <div className="heroPang3D" ref={mountRef} aria-hidden="true" />

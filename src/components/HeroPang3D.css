@@ -16,7 +16,7 @@
   height: 100%;
   opacity: 0;
   filter: drop-shadow(0 26px 40px rgba(7, 11, 36, 0.36));
-  transition: opacity 600ms ease;
+  transition: opacity 350ms ease;
 }
 
 .heroPang3D.is-ready canvas {
