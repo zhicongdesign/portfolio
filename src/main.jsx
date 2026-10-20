@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   BrowserRouter,
@@ -13,7 +13,6 @@ import { Analytics } from '@vercel/analytics/react';
 import { Asciify } from './components/canvasui/Asciify';
 import FoldText from './components/FoldText';
 import HeroPang3D from './components/HeroPang3D';
-import HeroPreloader from './components/HeroPreloader';
 import TiltedCard from './components/TiltedCard';
 import './styles.css';
 
@@ -482,49 +481,8 @@ function App() {
 
 function HomePage() {
   const location = useLocation();
-  const [modelPhase, setModelPhase] = useState(() =>
-    !window.location.hash || window.location.hash === '#top' ? 'loading' : 'ready'
-  );
-  const [modelProgress, setModelProgress] = useState(0);
-  const [canSkipModel, setCanSkipModel] = useState(false);
-  const isOverlayActive = modelPhase === 'loading' || modelPhase === 'finishing';
-  const isHomeLoading = isOverlayActive || modelPhase === 'exiting';
-
-  const handleModelReady = useCallback(() => {
-    setModelProgress(100);
-    setModelPhase((current) => current === 'loading' ? 'finishing' : current);
-  }, []);
-  const handleModelProgress = useCallback((progress) => {
-    setModelProgress((current) => Math.max(current, progress));
-  }, []);
-  const handleModelError = useCallback(() => {
-    setModelPhase('error');
-  }, []);
 
   useRevealAnimations('home');
-
-  useEffect(() => {
-    if (modelPhase !== 'finishing') return undefined;
-    const finishFrame = window.requestAnimationFrame(() => setModelPhase('exiting'));
-    return () => window.cancelAnimationFrame(finishFrame);
-  }, [modelPhase]);
-
-  useEffect(() => {
-    if (modelPhase !== 'exiting') return undefined;
-    const exitTimer = window.setTimeout(() => setModelPhase('ready'), 520);
-    return () => window.clearTimeout(exitTimer);
-  }, [modelPhase]);
-
-  useEffect(() => {
-    if (!isHomeLoading) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const skipTimer = window.setTimeout(() => setCanSkipModel(true), 6000);
-    return () => {
-      window.clearTimeout(skipTimer);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isHomeLoading]);
 
   useEffect(() => {
     const sectionId = location.hash.slice(1);
@@ -536,21 +494,9 @@ function HomePage() {
   }, [location.hash]);
 
   return (
-    <main className={`portfolioShell figmaPortfolio${isHomeLoading ? ' is-home-loading' : ''}`}>
-      <HeroPreloader
-        active={isOverlayActive}
-        progress={modelProgress}
-        canSkip={canSkipModel}
-        onSkip={() => setModelPhase('exiting')}
-        backgroundUrl={homeAssets.heroFallback}
-      />
+    <main className="portfolioShell figmaPortfolio">
       <FloatingNav />
-      <Hero
-        onModelReady={handleModelReady}
-        onModelProgress={handleModelProgress}
-        onModelError={handleModelError}
-        playModelEntrance={modelPhase === 'exiting' || modelPhase === 'ready'}
-      />
+      <Hero />
       <Resume />
       <Projects />
       <Footer />
@@ -602,7 +548,7 @@ function FloatingNav() {
   );
 }
 
-function Hero({ onModelReady, onModelProgress, onModelError, playModelEntrance }) {
+function Hero() {
   const [motionReady, setMotionReady] = useState(false);
   const heroRef = useRef(null);
   const loopVideoRef = useRef(null);
@@ -703,13 +649,7 @@ function Hero({ onModelReady, onModelProgress, onModelError, playModelEntrance }
           />
         </div>
 
-        <HeroPang3D
-          modelUrl={homeAssets.heroPangModel}
-          onReady={onModelReady}
-          onProgress={onModelProgress}
-          onError={onModelError}
-          playEntrance={playModelEntrance}
-        />
+        <HeroPang3D modelUrl={homeAssets.heroPangModel} />
 
         <div className="figmaHeroContent figmaHeroContent--pang">
           <h1 className="heroSemanticTitle">PANG</h1>
