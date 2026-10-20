@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 const damp = (current, target, lambda, delta) =>
   THREE.MathUtils.damp(current, target, lambda, delta);
 
-function HeroPang3D({ modelUrl }) {
+function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -22,13 +22,22 @@ function HeroPang3D({ modelUrl }) {
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const mobile = window.matchMedia('(max-width: 760px)').matches || coarsePointer;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(27, 1, 0.1, 100);
-    const renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: !coarsePointer,
-      powerPreference: 'high-performance',
-    });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: !coarsePointer,
+        powerPreference: 'high-performance',
+      });
+    } catch (error) {
+      console.warn('Hero model renderer unavailable:', error);
+      mount.classList.add('is-error');
+      onSettled?.(true);
+      return undefined;
+    }
 
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -36,10 +45,24 @@ function HeroPang3D({ modelUrl }) {
     renderer.toneMappingExposure = 0.85;
     mount.appendChild(renderer.domElement);
 
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const environmentTexture = pmremGenerator.fromScene(environment, 0.03).texture;
-    scene.environment = environmentTexture;
+    let environment;
+    let pmremGenerator;
+    let environmentTexture;
+    try {
+      environment = new RoomEnvironment();
+      pmremGenerator = new THREE.PMREMGenerator(renderer);
+      environmentTexture = pmremGenerator.fromScene(environment, 0.03).texture;
+      scene.environment = environmentTexture;
+    } catch (error) {
+      console.warn('Hero model environment unavailable:', error);
+      mount.classList.add('is-error');
+      environment?.dispose();
+      pmremGenerator?.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+      onSettled?.(true);
+      return undefined;
+    }
 
     const ambientLight = new THREE.HemisphereLight(0xffffff, 0x080627, 2.1);
     scene.add(ambientLight);
@@ -78,6 +101,7 @@ function HeroPang3D({ modelUrl }) {
     let introTimeline;
     let visible = true;
     let disposed = false;
+    let failed = false;
     let scrollProgress = 0;
     let targetScrollProgress = 0;
 
@@ -110,7 +134,7 @@ function HeroPang3D({ modelUrl }) {
     };
 
     const render = (time) => {
-      if (disposed || !visible || !model) {
+      if (disposed || failed || !visible || !model) {
         frameId = 0;
         return;
       }
@@ -138,12 +162,20 @@ function HeroPang3D({ modelUrl }) {
       blueLight.position.x = -4 + pointer.x * 2.4;
       renderer.toneMappingExposure = (0.85 + (pointer.x - pointer.y) * 0.04) * entrance.highlight;
 
-      renderer.render(scene, camera);
-      frameId = window.requestAnimationFrame(render);
+      try {
+        renderer.render(scene, camera);
+        frameId = window.requestAnimationFrame(render);
+      } catch (error) {
+        console.warn('Hero model rendering stopped:', error);
+        mount.classList.remove('is-ready');
+        mount.classList.add('is-error');
+        failed = true;
+        frameId = 0;
+      }
     };
 
     const start = () => {
-      if (reduceMotion || frameId || !visible || !model) return;
+      if (reduceMotion || failed || frameId || !visible || !model) return;
       previousFrameTime = performance.now();
       frameId = window.requestAnimationFrame(render);
     };
@@ -159,10 +191,20 @@ function HeroPang3D({ modelUrl }) {
 
     const resetPointer = () => targetPointer.set(0, 0);
 
+    const handleContextLost = () => {
+      mount.classList.remove('is-ready');
+      mount.classList.add('is-error');
+      failed = true;
+      stop();
+      onSettled?.(true);
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
+
     new GLTFLoader().load(
-      modelUrl,
+      mobile ? mobileModelUrl : modelUrl,
       (gltf) => {
         if (disposed) return;
+        try {
         model = gltf.scene;
         model.updateMatrixWorld(true);
 
@@ -236,12 +278,25 @@ function HeroPang3D({ modelUrl }) {
         } else {
           Object.assign(entrance, { rotateX: 0, rotateY: 0, y: 0, z: 0, scale: 1, highlight: 1 });
         }
+        renderer.render(scene, camera);
         mount.classList.add('is-ready');
-        if (reduceMotion) renderer.render(scene, camera);
-        else start();
+        onSettled?.(true);
+        if (!reduceMotion) start();
+        } catch (error) {
+          console.warn('Hero model processing failed:', error);
+          mount.classList.remove('is-ready');
+          mount.classList.add('is-error');
+          failed = true;
+          onSettled?.(true);
+        }
       },
       undefined,
-      () => mount.classList.add('is-error')
+      (error) => {
+        console.warn('Hero model loading failed:', error);
+        mount.classList.add('is-error');
+        failed = true;
+        onSettled?.(true);
+      }
     );
 
     const resizeObserver = new ResizeObserver(resize);
@@ -290,13 +345,16 @@ function HeroPang3D({ modelUrl }) {
       environment.dispose();
       environmentTexture.dispose();
       pmremGenerator.dispose();
+      renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [modelUrl]);
+  }, [modelUrl, mobileModelUrl, onSettled]);
 
   return (
-    <div className="heroPang3D" ref={mountRef} aria-hidden="true" />
+    <div className="heroPang3D" ref={mountRef} aria-hidden="true">
+      <span className="heroPangFallback">PANG</span>
+    </div>
   );
 }
 

@@ -10,7 +10,6 @@ import {
   useParams,
 } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
-import { Asciify } from './components/canvasui/Asciify';
 import FoldText from './components/FoldText';
 import HeroPang3D from './components/HeroPang3D';
 import TiltedCard from './components/TiltedCard';
@@ -37,7 +36,8 @@ const homeAssets = Object.fromEntries(Object.entries({
   alibabaBrand: '/assets/figma-home-v2/alibaba-brand-cover.png',
   arrow: '/assets/figma-home-v2/arrow.svg',
   loopMotion: '/assets/hero-motion/hero-loop-1080p.mp4',
-  heroPangModel: '/assets/3d/hero-pang-optimized.glb',
+  heroPangModel: '/assets/3d/hero-pang-desktop.glb',
+  heroPangModelMobile: '/assets/3d/hero-pang-mobile.glb',
 }).map(([key, path]) => [key, assetUrl(path)]));
 
 const profile = {
@@ -550,6 +550,8 @@ function FloatingNav() {
 
 function Hero() {
   const [motionReady, setMotionReady] = useState(false);
+  const [modelSettled, setModelSettled] = useState(false);
+  const deferMobileVideo = window.matchMedia('(max-width: 760px)').matches;
   const heroRef = useRef(null);
   const loopVideoRef = useRef(null);
 
@@ -615,30 +617,14 @@ function Hero() {
 
   return (
     <section className="figmaHero" id="top" ref={heroRef}>
-      <Asciify
-        className="heroAsciify"
-        radius={0.18}
-        softness={0.65}
-        scale={5}
-        spacing={1}
-        backgroundOpacity={0}
-        contrast={1.1}
-        brightness={0}
-        invert={0}
-        glow={0.25}
-        aberration={0.18}
-        strength={0.72}
-        baseStrength={0}
-        followSpeed={3}
-        charset="ascii"
-        background={[0, 0, 0]}
-      >
+      <div className="heroVisual">
+        <div className="heroVisualContent">
         <img className="figmaHeroFallback" src={homeAssets.heroFallback} alt="" aria-hidden="true" />
         <div className={`heroMotion${motionReady ? ' is-ready' : ''}`} aria-hidden="true">
           <video
             className="heroMotionVideo"
             ref={loopVideoRef}
-            src={homeAssets.loopMotion}
+            src={!deferMobileVideo || modelSettled ? homeAssets.loopMotion : undefined}
             poster={homeAssets.heroFallback}
             autoPlay
             loop
@@ -649,7 +635,11 @@ function Hero() {
           />
         </div>
 
-        <HeroPang3D modelUrl={homeAssets.heroPangModel} />
+        <HeroPang3D
+          modelUrl={homeAssets.heroPangModel}
+          mobileModelUrl={homeAssets.heroPangModelMobile}
+          onSettled={setModelSettled}
+        />
 
         <div className="figmaHeroContent figmaHeroContent--pang">
           <h1 className="heroSemanticTitle">PANG</h1>
@@ -664,7 +654,8 @@ function Hero() {
           <p className="heroPangPortfolio">PORTFOLIO</p>
           <p className="figmaHeroYear heroPangYear"><span>UPDATED</span><span>2026</span></p>
         </div>
-      </Asciify>
+        </div>
+      </div>
     </section>
   );
 }

@@ -6,7 +6,8 @@ export default defineConfig(async ({ command }) => {
     : null;
   return {
     base: '/',
+    publicDir: command === 'build' ? false : 'public',
     define: { __OPTIMIZED_IMAGES__: JSON.stringify(images?.mapping || {}) },
-    plugins: images ? [{ name: 'lossless-public-images', closeBundle: images.writeOutput }] : [],
+    plugins: images ? [{ name: 'optimized-public-images', closeBundle: images.writeOutput }] : [],
   };
 });

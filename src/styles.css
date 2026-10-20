@@ -3883,7 +3883,7 @@ button {
 }
 
 /* Floating homepage navigation */
-.heroAsciify {
+.heroVisual {
   position: absolute !important;
   inset: 0;
   z-index: 1;
@@ -3892,17 +3892,14 @@ button {
   overflow: hidden;
 }
 
-.heroAsciify > div,
-.heroAsciify > canvas:first-child > div {
-  overflow: hidden !important;
+.heroVisualContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.heroAsciify > canvas:last-child {
-  z-index: 20;
-  opacity: 0.42;
-}
-
-.heroAsciify .figmaHeroContent {
+.heroVisual .figmaHeroContent {
   z-index: 30;
 }
 
@@ -5196,10 +5193,6 @@ button {
     flex-direction: column;
     align-items: flex-start;
     padding: 168px 28px 208px;
-  }
-
-  .heroAsciify > canvas {
-    display: none;
   }
 
   .figmaHeroTitle {
