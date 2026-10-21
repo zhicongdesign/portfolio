@@ -62,6 +62,15 @@ export async function optimizeImages() {
   results.sort((a, b) => a.path.localeCompare(b.path));
   const mapping = Object.fromEntries(results.filter(item => item.path !== item.outputPath)
     .map(item => [`/${item.path}`, `/${item.outputPath}`]));
+  const models = [];
+  for (const name of ['hero-pang-desktop', 'hero-pang-mobile']) {
+    const path = `assets/3d/${name}.glb`;
+    const digest = createHash('sha256').update(await readFile(join(sourceRoot, path)))
+      .digest('hex').slice(0, 12);
+    const outputPath = `assets/3d/${name}.${digest}.glb`;
+    models.push({ path, outputPath });
+    mapping[`/${path}`] = `/${outputPath}`;
+  }
   const before = results.reduce((total, item) => total + item.originalBytes, 0);
   const after = results.reduce((total, item) => total + item.optimizedBytes, 0);
   console.log(`High-quality WebP: ${files.length} images, ${(before / 1048576).toFixed(1)} -> ${(after / 1048576).toFixed(1)} MiB (${((1 - after / before) * 100).toFixed(1)}% smaller).`);
@@ -72,6 +81,11 @@ export async function optimizeImages() {
         const output = join(outputRoot, item.outputPath);
         await mkdir(dirname(output), { recursive: true });
         await copyFile(item.path === item.outputPath ? join(sourceRoot, item.path) : item.cached, output);
+      }
+      for (const { path, outputPath } of models) {
+        const output = join(outputRoot, outputPath);
+        await mkdir(dirname(output), { recursive: true });
+        await copyFile(join(sourceRoot, path), output);
       }
       // Vite's default public-directory copy also ships all large source PNGs,
       // unused design exports, and source 3D files. Only runtime assets belong
@@ -86,9 +100,8 @@ export async function optimizeImages() {
         'assets/figma-home/hero-texture.png',
         'assets/figma-frames/resume.png',
         'assets/contact-background.png',
+        'assets/hero-pang-placeholder.png',
         'assets/hero-motion/hero-loop-1080p.mp4',
-        'assets/3d/hero-pang-desktop.glb',
-        'assets/3d/hero-pang-mobile.glb',
       ]) {
         const output = join(outputRoot, path);
         await mkdir(dirname(output), { recursive: true });

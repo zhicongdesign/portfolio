@@ -12,16 +12,13 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  color: #8994f5;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(84px, 14vw, 240px);
-  font-weight: 900;
-  line-height: 0.9;
-  letter-spacing: -0.095em;
-  white-space: nowrap;
-  text-shadow: 2px 2px 0 #5965c8, 5px 5px 0 #354697, 14px 18px 26px rgba(0, 0, 0, 0.25);
-  transform: translate(-50%, -50%) scaleX(1.08);
-  transition: opacity 250ms ease;
+  display: block;
+  width: 80%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  transition: opacity 520ms ease;
 }
 
 .heroPang3D.is-ready .heroPangFallback {
@@ -36,11 +33,16 @@
   height: 100%;
   opacity: 0;
   filter: drop-shadow(0 26px 40px rgba(7, 11, 36, 0.36));
-  transition: opacity 600ms ease;
+  transition: opacity 520ms ease;
 }
 
 .heroPang3D.is-ready canvas {
   opacity: 1;
+}
+
+.heroPang3D.is-fast-ready .heroPangFallback,
+.heroPang3D.is-fast-ready canvas {
+  transition: none;
 }
 
 @media (max-width: 760px) {
@@ -56,11 +58,12 @@
   }
 
   .heroPangFallback {
-    font-size: clamp(84px, 22vw, 150px);
+    width: 100%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .heroPangFallback,
   .heroPang3D canvas {
     transition: none;
   }

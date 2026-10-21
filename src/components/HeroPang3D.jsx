@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -14,6 +14,15 @@ const damp = (current, target, lambda, delta) =>
 
 function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
   const mountRef = useRef(null);
+  const selectedModelUrl = window.matchMedia('(max-width: 760px)').matches
+    || window.matchMedia('(pointer: coarse)').matches ? mobileModelUrl : modelUrl;
+  const [phase, setPhase] = useState(() => {
+    const scriptUrl = document.querySelector('script[type="module"]')?.src;
+    const scriptResource = scriptUrl && performance.getEntriesByName(scriptUrl, 'resource').at(-1);
+    const scriptCached = scriptResource?.transferSize === 0;
+    return scriptCached && performance.now() < (window.__heroBootProbeUntil || 0)
+      ? 'probing' : 'loading';
+  });
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -22,7 +31,15 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    const mobile = window.matchMedia('(max-width: 760px)').matches || coarsePointer;
+    const loadStart = performance.now();
+    let probeTimer = null;
+    let probeExpired = false;
+    if (phase === 'probing') {
+      probeTimer = window.setTimeout(() => {
+        probeExpired = true;
+        setPhase((current) => current === 'probing' ? 'loading' : current);
+      }, Math.max(0, window.__heroBootProbeUntil - performance.now()));
+    }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(27, 1, 0.1, 100);
     let renderer;
@@ -34,7 +51,8 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
       });
     } catch (error) {
       console.warn('Hero model renderer unavailable:', error);
-      mount.classList.add('is-error');
+      window.clearTimeout(probeTimer);
+      setPhase('error');
       onSettled?.(true);
       return undefined;
     }
@@ -55,7 +73,8 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
       scene.environment = environmentTexture;
     } catch (error) {
       console.warn('Hero model environment unavailable:', error);
-      mount.classList.add('is-error');
+      window.clearTimeout(probeTimer);
+      setPhase('error');
       environment?.dispose();
       pmremGenerator?.dispose();
       renderer.dispose();
@@ -96,10 +115,13 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
     const fittedSize = new THREE.Vector3(1, 1, 1);
     let model;
     let frameId = 0;
+    let firstFrameId = 0;
+    let introFrameId = 0;
     let elapsed = 0;
     let previousFrameTime = 0;
     let introTimeline;
     let visible = true;
+    let firstFrameReady = false;
     let disposed = false;
     let failed = false;
     let scrollProgress = 0;
@@ -133,14 +155,7 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
       previousFrameTime = 0;
     };
 
-    const render = (time) => {
-      if (disposed || failed || !visible || !model) {
-        frameId = 0;
-        return;
-      }
-
-      const delta = Math.min((time - previousFrameTime) / 1000, 0.05);
-      previousFrameTime = time;
+    const updateScenePose = (delta) => {
       elapsed += delta;
       pointer.x = damp(pointer.x, targetPointer.x, 6.5, delta);
       pointer.y = damp(pointer.y, targetPointer.y, 6.5, delta);
@@ -161,21 +176,32 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
       keyLight.position.y = 2.31 - pointer.y * 1.4;
       blueLight.position.x = -4 + pointer.x * 2.4;
       renderer.toneMappingExposure = (0.85 + (pointer.x - pointer.y) * 0.04) * entrance.highlight;
+    };
+
+    const render = (time) => {
+      if (disposed || failed || !visible || !model) {
+        frameId = 0;
+        return;
+      }
+
+      const delta = Math.min((time - previousFrameTime) / 1000, 0.05);
+      previousFrameTime = time;
+      updateScenePose(delta);
 
       try {
         renderer.render(scene, camera);
         frameId = window.requestAnimationFrame(render);
       } catch (error) {
         console.warn('Hero model rendering stopped:', error);
-        mount.classList.remove('is-ready');
-        mount.classList.add('is-error');
+        setPhase('error');
         failed = true;
         frameId = 0;
+        onSettled?.(true);
       }
     };
 
     const start = () => {
-      if (reduceMotion || failed || frameId || !visible || !model) return;
+      if (reduceMotion || failed || !firstFrameReady || frameId || !visible || !model) return;
       previousFrameTime = performance.now();
       frameId = window.requestAnimationFrame(render);
     };
@@ -192,8 +218,7 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
     const resetPointer = () => targetPointer.set(0, 0);
 
     const handleContextLost = () => {
-      mount.classList.remove('is-ready');
-      mount.classList.add('is-error');
+      setPhase('error');
       failed = true;
       stop();
       onSettled?.(true);
@@ -201,7 +226,7 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
     renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
 
     new GLTFLoader().load(
-      mobile ? mobileModelUrl : modelUrl,
+      selectedModelUrl,
       (gltf) => {
         if (disposed) return;
         try {
@@ -254,7 +279,7 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
         pivot.add(model);
         resize();
         if (!reduceMotion && scrollProgress < 0.15) {
-          introTimeline = gsap.timeline()
+          introTimeline = gsap.timeline({ paused: true })
             .to(entrance, {
               rotateX: -0.015,
               rotateY: 0.04,
@@ -278,22 +303,57 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
         } else {
           Object.assign(entrance, { rotateX: 0, rotateY: 0, y: 0, z: 0, scale: 1, highlight: 1 });
         }
+        // The first visible frame must use the entrance pose before the timeline advances.
+        updateScenePose(0);
         renderer.render(scene, camera);
-        mount.classList.add('is-ready');
-        onSettled?.(true);
-        if (!reduceMotion) start();
+        mount.dataset.firstFrameMs = String(Math.round(performance.now() - loadStart));
+        firstFrameId = window.requestAnimationFrame(() => {
+          if (disposed || failed) return;
+          try {
+            renderer.render(scene, camera);
+            firstFrameReady = true;
+            const resourceUrl = new URL(selectedModelUrl, window.location.href).href;
+            const resource = performance.getEntriesByName(resourceUrl, 'resource').at(-1);
+            const cacheHit = resource?.transferSize === 0;
+            mount.dataset.modelCache = cacheHit ? 'hit' : 'network';
+            mount.dataset.modelReadyMs = String(Math.round(performance.now() - loadStart));
+            window.clearTimeout(probeTimer);
+            setPhase(phase === 'probing' && !probeExpired && cacheHit ? 'fast-ready' : 'ready');
+            try {
+              window.localStorage.setItem(`hero-model-ready:${selectedModelUrl}`, '1');
+            } catch {
+              // Storage may be disabled in private browsing; rendering still works.
+            }
+            onSettled?.(true);
+            if (!reduceMotion) {
+              introFrameId = window.requestAnimationFrame(() => {
+                if (disposed || failed) return;
+                mount.dataset.introStartedMs = String(Math.round(performance.now() - loadStart));
+                introTimeline?.play(0);
+                start();
+              });
+            }
+          } catch (error) {
+            console.warn('Hero model first frame failed:', error);
+            setPhase('error');
+            failed = true;
+            onSettled?.(true);
+          }
+        });
         } catch (error) {
           console.warn('Hero model processing failed:', error);
-          mount.classList.remove('is-ready');
-          mount.classList.add('is-error');
+          window.clearTimeout(probeTimer);
+          setPhase('error');
           failed = true;
           onSettled?.(true);
         }
       },
       undefined,
       (error) => {
+        if (disposed) return;
         console.warn('Hero model loading failed:', error);
-        mount.classList.add('is-error');
+        window.clearTimeout(probeTimer);
+        setPhase('error');
         failed = true;
         onSettled?.(true);
       }
@@ -329,6 +389,9 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
 
     return () => {
       disposed = true;
+      window.clearTimeout(probeTimer);
+      window.cancelAnimationFrame(firstFrameId);
+      window.cancelAnimationFrame(introFrameId);
       stop();
       introTimeline?.kill();
       scrollTrigger?.kill();
@@ -349,11 +412,22 @@ function HeroPang3D({ modelUrl, mobileModelUrl, onSettled }) {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [modelUrl, mobileModelUrl, onSettled]);
+  }, [selectedModelUrl, onSettled]);
 
   return (
-    <div className="heroPang3D" ref={mountRef} aria-hidden="true">
-      <span className="heroPangFallback">PANG</span>
+    <div
+      className={`heroPang3D${phase === 'probing' ? ' is-probing' : ''}${phase === 'ready' || phase === 'fast-ready' ? ' is-ready' : ''}${phase === 'fast-ready' ? ' is-fast-ready' : ''}${phase === 'error' ? ' is-error' : ''}`}
+      ref={mountRef}
+      aria-hidden="true"
+    >
+      <img
+        className="heroPangFallback"
+        src="/assets/hero-pang-placeholder.png"
+        alt=""
+        width="903"
+        height="293"
+        fetchPriority="high"
+      />
     </div>
   );
 }

@@ -3,10 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preload" as="image" href="/assets/hero-pang-placeholder.png" fetchpriority="high" />
+    <style>
+      html, body { margin: 0; }
+      #hero-boot {
+        position: relative;
+        min-height: max(760px, 100svh);
+        overflow: hidden;
+        background-image: url('__HERO_BACKDROP__'), linear-gradient(180deg, #020728 0%, #030a2a 46%, #0b2569 65%, #1475df 82%, #28b6fc 89%, #fff 97%);
+        background-position: center;
+        background-size: cover;
+      }
+      #hero-boot img {
+        position: absolute;
+        top: 33%;
+        left: 50%;
+        width: min(50%, 950px);
+        height: auto;
+        transform: translate(-50%, -50%);
+      }
+      html.no-hero-boot #hero-boot { display: none; }
+      @media (max-width: 760px) {
+        #hero-boot img { top: 30%; width: 100%; }
+      }
+    </style>
+    <script>
+      if (location.pathname.startsWith('/projects/')) {
+        document.documentElement.classList.add('no-hero-boot');
+      } else {
+        try {
+          const mobile = matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+          const modelPath = mobile ? '__HERO_MOBILE_MODEL__' : '__HERO_DESKTOP_MODEL__';
+          if (localStorage.getItem(`hero-model-ready:${modelPath}`)) {
+            window.__heroBootProbeUntil = performance.now() + 300;
+          }
+        } catch { /* Storage may be unavailable. */ }
+      }
+    </script>
     <title>Zhicong Portfolio</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="hero-boot" aria-hidden="true"><img src="/assets/hero-pang-placeholder.png" alt="" width="903" height="293" fetchpriority="high" /></div></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -677,8 +677,6 @@ function Resume() {
               scaleOnHover={1.035}
               showMobileWarning={false}
               showTooltip={false}
-              displayOverlayContent
-              overlayContent={<span className="introPortraitAccent" aria-hidden="true" />}
             />
           </div>
           <h2>I'm ZHICONG PANG</h2>
